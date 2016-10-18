@@ -1,0 +1,12 @@
+xsql -S201.24.38.134 -P8433 -i(需要执行的sql文件）
+xsql> use zxdbc_133;
+在scp上执行
+
+数据导出命令是：
+loadoutall -f '!@#$' -l '%^&*' zxdbc_133 /home/zxin11/要导出的文件名称
+
+-f后是字段分隔符
+-l后是记录分隔符
+
+导入命令是：
+loadinall -f '!@#$' -l '%^&*' zxdbc_133 /home/zxin11/要导入的文件名称
