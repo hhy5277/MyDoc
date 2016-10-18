@@ -1,0 +1,91 @@
+xstart	启动xbase
+xstat	观察xbase进程动态
+xstop	停止xbase
+xbasemoni	启动监控程序xbasemoni和数据库xbase
+xsuperstop	停止监控程序xbasemoni和数据库xbase
+extrabase  -v	查看当前xbase数据库系统的版本号
+xsql -h		显示xsql的帮助信息
+
+xsql –s XXX –p YYY 	用xsql工具连接到指定的xbase服务器。其中XXX、YYY分别为xbase服务器的IP地址和监听端口。xbase的缺省监听端口是8433
+xsql –s XXX –p YYY –i ZZZ	用xsql工具连接到指定的xbase服务器，执行指定的sql脚本。其中ZZZ为需要执行的sql脚本
+
+以下命令需要在xsql下使用：
+
+show procedures	查看所有存储过程的名称
+show tables	查看所有xbase表的索引信息
+show session	查看所有客户端连接的情况，每个客户端连接用一条记录表示。
+desc table  XXX	查看指定表的字段、索引等信息。XXX 为需要查看的表名
+desc procedure XXX	查看指定储存过程的创建脚本。XXX 为需要查看的存储过程名
+select get_used_pages()	已使用的内存page数。1page=64K bytes
+select get_total_pages()	xbase总的内存内存page数。和xbaes.cfg中[psm]page_count相同
+
+if (exists('XXX'))
+print 'XXX exist'
+else
+print 'XXX inexist' 
+go 	检查某表或存储过程是否存在
+
+load data outfile '/home/tag/tmp/cc_mqueuestat.dat' from table cc_mqueuestat  where 1=1 field_term '|';	导出单张表到文件
+load data infile '/home/tag/tmp/cc_mqueuestat.dat' into table cc_mqueuestat field_term '|';		从文件导入单张表
+export '/home/tag/tmp/all.dat';	导出全库
+import '/home/tag/tmp/all.dat';	导入全库
+$HOME/dict/sys_dict_data.dat	这是xbase的数据字典，是一个XML文件，这个文件中记录了所有DDL（建表脚本、建索引脚本、建储存过程脚本）
+
+ebase 整库备份方法：
+在xsql里执行export  '/home/zxin10/ebase_bak' ;把数据备份出来，
+该命令会生成两个文件：
+ebase_bak            -- 这个是data文件
+ebase_bak.dict     -- 这个是dict文件
+
+ebase 全库恢复：
+在xsql里执行import '/home/zxin10/ebase_bak';
+注意，全库恢复时，/home/zxin10/路径下必须包含ebase_bak和ebase_bak.dict两个文件！如果只有data文件而没有dict文件，会提示：
+Err Msg :Error number: 56, restore dict error,  in que_thr_end
+
+注:ebase的数据库文件，比如数据文件、日志文件、数据字典等，存放路径在xbase.cfg中配置，通常放在/home/zxin10/service路径下的data、log、redolog、dict等目录里。在多SCP环境下，如果某一SCP的ebase数据库损坏，可以将其它SCP的ebase数据库文件拷贝覆盖。
+
+
+导出单张表s65notecontent：
+
+[zxin10@scp1 ~]$ xsql -p 8433 -s 172.22.54.141
+Welcome to the XSQL monitor.  Commands end with ; or \g.
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+xsql> use zxdbg_65;
+infected 0 rows
+
+execute OK, execute time  (0.00 sec)
+xsql> select count(*) from zxdbg_65..s65notecontent;
+COUNT()
+564
+infected 1 rows
+
+execute OK, execute time  (0.00 sec)
+xsql> load data outfile '/home/zxin10/s65notecontent.dat' from table zxdbg_65..s65notecontent  where 1=1 field_term '|';
+infected 564 rows
+
+execute OK, execute time  (0.03 sec)
+xsql> exit
+Bye
+[zxin10@scp1 ~]$ scp s65notecontent.dat  172.22.52.141:./
+
+os10+ZTE
+
+导入单张表s65notecontent：
+
+[zxin10@scp1 ~]$ xsql -p8433 -s172.22.52.141
+Welcome to the XSQL monitor.  Commands end with ; or \g.
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+xsql> use zxdbg_65;
+infected 0 rows
+
+execute OK, execute time  (0.00 sec)
+
+xsql>truncate table zxdbg_65..s65notecontent;
+infected 0 rows
+xsql> load data infile '/home/zxin10/s65notecontent.dat' into table zxdbg_65..s65notecontent field_term '|'; 
+infected 564 rows
+
+execute OK, execute time  (0.06 sec)
+xsql> 
